@@ -13,6 +13,8 @@
 
 #include "I2CInstruction.h"
 
+// DEFINE F_CPU
+
 // TWCR Macros
 
 #define TWI_INT_FLAG	TWINT				// I2C interrupt flag
@@ -51,11 +53,22 @@
 #define SLA_DATA_TRA_NACK_REC		0xC0	// As slave, data transmitted, NACK received
 #define LAST_DATA_TRA_ACK_REC		0xC8	// As slave, last data transmitted, ACK received
 
-/*End API*/
 
-void I2CTask();		// Called every loop to determine when to start I2C transaction		
-void I2CHandle();	// This handles I2C using info from the I2C-Instructions
-void I2CInit();		// Initialize the I2C 
+/* Must be called frequently (every loop in a simple embedded program) to determine when to start I2C transaction */
+void I2CTask();	
+
+/* Called to initialize the I2C to a certain frequency
+ * Param: long sclFreq is the intended frequency for the I2C peripheral to run at 
+ *
+ * NOTE: Calculation stems from the following equation:
+ * SCL_CLK = F_CPU / (16 + 2 * TWBR * (4^TWPS))
+ * With the assumption that TWPS is 1
+ * For lower SCL_CLKs, it may be necessary to set TWPS to a number other than 1, and so this function should be
+ * changed or ignored.	*/
+void I2CInit();
+
+/*	Must be called to set the buffer for the I2C driver to take instructions from
+ *	Param: struct I2CInstruction * buf is a pointer to the the buffer you want to use */
 void I2CSetCurBuf(I2CBuffer_pT buf);
 
 #endif /* I2C_DRIVER_H_ */

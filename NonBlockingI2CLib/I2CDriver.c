@@ -14,6 +14,9 @@
 #include "I2CInstruction.h"
 #include "Usart.h"
 
+//Forward declaration
+void I2CHandle(void);
+
 // I2C event interrupt
 ISR(TWI_vect)
 {
@@ -79,6 +82,9 @@ static uint8_t g_state = 0;
 // This has to exist because we need to access the buffer from interrupts
 // Global variables it is :(
 static I2CBuffer_pT g_curBuf = NULL;
+
+/*	Must be called to set the buffer for the I2C driver to take instructions from
+ *	Param: struct I2CInstruction * buf is a pointer to the the buffer you want to use */
 void I2CSetCurBuf(I2CBuffer_pT buf)
 {
 	g_curBuf = buf;
@@ -225,28 +231,29 @@ void I2CTask()
 	}	
 }
 
-// Initialize the I2C
-void I2CInit()
-{
+#ifndef F_CPU
+#define F_CPU 16000000UL
+#endif //F_CPU
+
+/* Called to initialize the I2C to a certain frequency
+ * Param: long sclFreq is the intended frequency for the I2C peripheral to run at */
+void I2CInit(long sclFreq)
+{	
 	/*
 	
-	 (16000000HZ) / (16 + 2x * 4^TWPS) = 400000
-	 
-	 so
-	 
-	 (16 + 2x * 4 ^TWPS) = 40
-	 
-	 so
-	 
-	 2x * 4^TWPS = 24
-	 x = 3
-	 TWPS = 1
-	 
-	 */
+	Calculation stems from the following equation:
+		SCL_CLK = F_CPU / (16 + 2 * TWBR * (4^TWPS))
+	With the assumption that TWPS is 1
 	
-	// Set TWBR to 3 (calculation shown above)
-	TWBR = 50;
+	For lower SCL_CLKs, it may be necessary to set TWPS to a number other than 1, and so this function should be
+	changed or ignored.
 	
-	// Initial TWCR settings
+	*/
+	
+	long temp1 = (F_CPU / sclFreq);
+	long temp2 = temp1 - 16;
+	long temp3 = temp2 / 8;
+	
+	TWBR = (int)temp3;
 	TWCR = (1 << TWI_INT_FLAG) | (1 << TWI_ENABLE) | (1 << TWI_INT_EN);
 }
