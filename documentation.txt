@@ -43,7 +43,7 @@ int I2CInstructionGetReadWrite(I2CInstruction_pT ipt);				Returns ipt.readWrite 
 I2CInstruction_pT I2CInstructionGetNextInstr(I2CInstruction_pT ipt);		Returns ipt.nextInstr (See I2CInstruction struct)
 
 I2CBuffer API:
-I2CBuffer_pT I2CBufferNew();									I2CBuffer constructor. Returns a pointer to a new I2CBuffer or NULL is the operation failed
+I2CBuffer_pT I2CBufferNew();						I2CBuffer constructor. Returns a pointer to a new I2CBuffer or NULL is the operation failed
 void I2CBufferFree(I2CBuffer_pT buf);							I2CBuffer destructor. Frees all memory associated with an I2CBuffer. In all likelihood, never necessary as Buffers should last until program completion
 I2CInstruction_pT I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);		Frees the current instruction, Moves buf.currPt to the next instruction, returns the NEW buf.currPt (NULL if the operation failed)
 int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr);			Returns 1 (true) if buf contains instr, or 0 (false) if buf does not contain instr
