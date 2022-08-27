@@ -9,7 +9,7 @@ Defines/Macros:
 #define I2C_WRITE	0
 #define I2C_READ	1
 
-Abstract data types (The variables inside are not meant to be accessed directly):
+Abstract data types (The variables inside are NOT meant to be accessed directly):
 
 struct I2CInstruction
 {
@@ -20,8 +20,6 @@ struct I2CInstruction
 	struct I2CInstruction * nextInstr;					A pointer to the next instruction (Instructions act like nodes in a linked list)
 }
 
-typedef struct I2CInstruction * I2CInstruction_pT; 	I2CInstruction_pT is a pointer to an I2CInstruction structure
-
 struct I2CBuffer
 {
 	struct I2CInstruction * endPt;					Pointer to the last instruction in the buffer
@@ -29,27 +27,23 @@ struct I2CBuffer
 	size_t currentSize;							Current size of the buffer
 }
 
+
+Typedefs:
+
+typedef uint32_t I2CInstruction_ID; 					I2CInstruction_ID is the memory safe way to identify I2CInstructions
 typedef struct I2CBuffer * I2CBuffer_pT;					I2CBuffer_pT is a pointer to an I2CBuffer structure
 
 
 Functions:
 
-I2CInstruction API:
-Accessors:
-int I2CInstructionGetAddress(I2CInstruction_pT ipt);					Returns ipt.dev_addr (See I2CInstruction struct)
-int I2CInstructionGetLength(I2CInstruction_pT ipt);					Returns ipt.length (See I2CInstruction struct)
-uint8_t * I2CInstructionGetData(I2CInstruction_pT ipt);				Returns ipt.data (See I2CInstruction struct)
-int I2CInstructionGetReadWrite(I2CInstruction_pT ipt);				Returns ipt.readWrite (See I2CInstruction struct)
-I2CInstruction_pT I2CInstructionGetNextInstr(I2CInstruction_pT ipt);		Returns ipt.nextInstr (See I2CInstruction struct)
-
 I2CBuffer API:
 I2CBuffer_pT I2CBufferNew();						I2CBuffer constructor. Returns a pointer to a new I2CBuffer or NULL is the operation failed
 void I2CBufferFree(I2CBuffer_pT buf);							I2CBuffer destructor. Frees all memory associated with an I2CBuffer. In all likelihood, never necessary as Buffers should last until program completion
-I2CInstruction_pT I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);		Frees the current instruction, Moves buf.currPt to the next instruction, returns the NEW buf.currPt (NULL if the operation failed)
+I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);		Frees the current instruction, Moves buf.currPt to the next instruction, returns the NEW buf.currPt's ID (0 if the operation failed)
 int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr);			Returns 1 (true) if buf contains instr, or 0 (false) if buf does not contain instr
 int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr);			Removes instr from buf if buf contains instr. Returns 1 if buf contained instr, 0 otherwise
 void I2CBufferSendToBack(I2CBuffer_pT buf);						Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction
-I2CInstruction_pT I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng);	Adds a new instruction to the end of buf, where the new instruction has the following data
+I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng);	Adds and returns the id of a new instruction at the end of buf, where the new instruction has the following data
 	dev_addr = d_add
 	readWrite = rw
 	data = dat
@@ -57,10 +51,13 @@ I2CInstruction_pT I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, u
 	nextInstr = NULL
 
 Accessors:
-I2CInstruction_pT I2CBufferGetCurrentInstruction(I2CBuffer_pT buf);		Returns buf.currPt (See I2CBuffer struct)
 size_t I2CBufferGetCurrentSize(I2CBuffer_pT buf);					Returns buf.currentSize (See I2CBuffer struct)
-
-
+int I2CBufferGetCurrentInstructionAddress(I2CBuffer_pT ibt);			Returns the device address of ibt->currPt
+int I2CBufferGetCurrentInstructionLength(I2CBuffer_pT ibt);				Returns the length of ibt->currPt
+int I2CBufferGetCurrentInstructionReadWrite(I2CBuffer_pT ibt);			Returns whether ibt->currPt is read or write
+I2CInstruction_ID I2CBufferGetCurrentInstructionID(I2CBuffer_pT ibt);		Returns ibt-currPt's ID
+uint8_t I2CBufferGetCurrentInstructionData(I2CBuffer_pT ibt, int offset);	Returns the data in *(ibt->currPt->data + offset)
+int I2CBufferSetCurrentInstructionData(I2CBuffer_pT ibt, int offset, uint8_t data);		Sets the data in *(ibt->currPt->data + offset); Returns True (1) if successful and False (0) if the operation failed
 
 
 I2CDriver.h/.c
@@ -108,7 +105,6 @@ Functions:
 
 API:
 
-
 void I2CTask()							Must be called frequently (every loop in a simple embedded program) to determine when to start I2C transaction
 
 void I2CSetCurBuf(struct I2CInstruction * buf)		Must be called to set the buffer for the I2C driver to take instructions from
@@ -126,7 +122,7 @@ void I2CInit(long sclFreq)					Called to initialize the I2C to a certain frequen
 	changed or ignored.
 
 
-Helper (think private/don't use) functions:
+Helper (private/don't use) functions:
 inline void sendStartCond()					Sends a start condition to the I2C bus
 inline void sendStopCond()					Sends a stop condition to the I2C bus
 inline void enableACK()						Enables ACK

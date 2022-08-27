@@ -14,6 +14,8 @@
 // Custom includes
 #include "I2CInstruction.h"
 
+static I2CInstruction_ID g_s_instrIDAssigner = 1;
+
 typedef struct I2CInstruction
 {
 	int dev_addr;
@@ -21,6 +23,7 @@ typedef struct I2CInstruction
 	uint8_t* data;
 	int length;
 	struct I2CInstruction * nextInstr;
+	I2CInstruction_ID instrID;
 	
 }* I2CInstruction_pT;
 
@@ -60,6 +63,13 @@ I2CInstruction_pT I2CInstructionNew(int d_add, int rw, uint8_t* dat, int leng)
 	newInstr->dev_addr = d_add;
 	newInstr->readWrite = rw;
 	newInstr->length = leng;
+	
+	newInstr->instrID = g_s_instrIDAssigner;
+	g_s_instrIDAssigner++;
+	if (!g_s_instrIDAssigner)
+	{
+		g_s_instrIDAssigner = 1;
+	}
 	
 	return newInstr;
 }
@@ -133,6 +143,16 @@ I2CInstruction_pT I2CInstructionGetNextInstr(I2CInstruction_pT ipt)
 	return ipt->nextInstr;
 }
 
+I2CInstruction_ID I2CInstructionGetID(I2CInstruction_pT ipt)
+{
+	if (!ipt)
+	{
+		return 0;
+	}
+	
+	return ipt->instrID;
+}
+
 I2CBuffer_pT I2CBufferNew()
 {
 	I2CBuffer_pT newBuf = malloc(sizeof(struct I2CBuffer));
@@ -168,18 +188,18 @@ void I2CBufferFree(I2CBuffer_pT buf)
 }
 
 // Moves to the next instruction
-I2CInstruction_pT I2CBufferMoveToNextInstruction(I2CBuffer_pT buf)
+I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf)
 {
 	if (!buf)
 	{
-		return NULL;
+		return 0;
 	}
 	
 	cli();
 	
 	if (!buf->currPt)
 	{
-		return NULL;
+		return 0;
 	}
 	
 	buf->currentSize--;
@@ -199,30 +219,85 @@ I2CInstruction_pT I2CBufferMoveToNextInstruction(I2CBuffer_pT buf)
 	sei();
 	
 	// Returns the next instruction (or nullptr if none)
-	return buf->currPt;
+	return buf->currPt->instrID;
 }
 
-// Returns a pointer to the current instruction
-I2CInstruction_pT I2CBufferGetCurrentInstruction(I2CBuffer_pT buf)
+int I2CBufferGetCurrentInstructionAddress(I2CBuffer_pT ibt)
 {
-	if (!buf)
+	if (!ibt || !(ibt->currPt))
 	{
-		return NULL;
+		return 0;
 	}
 	
-	// Returns the current instruction
-	return buf->currPt;
+	return ibt->currPt->dev_addr;
 }
 
-I2CInstruction_pT I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT newInstr)
+int I2CBufferGetCurrentInstructionLength(I2CBuffer_pT ibt)
+{
+	if (!ibt || !(ibt->currPt))
+	{
+		return 0;
+	}
+	
+	return ibt->currPt->length;
+}
+
+int I2CBufferSetCurrentInstructionData(I2CBuffer_pT ibt, int offset, uint8_t data)
+{
+	if (!ibt || !(ibt->currPt))
+	{
+		return 0;
+	}
+	if (offset >= ibt->currPt->length)
+	{
+		return 0;
+	}
+	*(ibt->currPt->data + offset) = data;
+	return 1;
+}
+
+uint8_t I2CBufferGetCurrentInstructionData(I2CBuffer_pT ibt, int offset)
+{
+	if (!ibt || !(ibt->currPt))
+	{
+		return 0;
+	}
+	if (offset >= ibt->currPt->length)
+	{
+		return 0;
+	}
+	return *(ibt->currPt->data + offset);
+}
+
+int I2CBufferGetCurrentInstructionReadWrite(I2CBuffer_pT ibt)
+{
+	if (!ibt || !(ibt->currPt))
+	{
+		return 0;
+	}
+	
+	return ibt->currPt->readWrite;
+}
+
+I2CInstruction_ID I2CBufferGetCurrentInstructionID(I2CBuffer_pT ibt)
+{
+	if (!ibt || !(ibt->currPt))
+	{
+		return 0;
+	}
+	
+	return ibt->currPt->instrID;
+}
+
+I2CInstruction_ID I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT newInstr)
 {
 	if (!buf)
 	{
-		return NULL;
+		return 0;
 	}
 	if (!newInstr)
 	{
-		return NULL;
+		return 0;
 	}
 	
 	cli();
@@ -246,23 +321,23 @@ I2CInstruction_pT I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT n
 	}
 	
 	sei();
-	return buf->endPt;
+	return buf->endPt->instrID;
 }
 
 
 
 // Adds an instruction at w_ptr
-I2CInstruction_pT I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng)
+I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng)
 {
 	if (!buf)
 	{
-		return NULL;
+		return 0;
 	}
 	
 	I2CInstruction_pT newInstr = I2CInstructionNew(d_add, rw, dat, leng);
 	if (newInstr == NULL)
 	{
-		return NULL;
+		return 0;
 	}
 	return I2CBufferPushInstruction(buf, newInstr);
 	
@@ -272,13 +347,12 @@ size_t I2CBufferGetCurrentSize(I2CBuffer_pT buf)
 {
 	if (!buf)
 	{
-		
 		return 0;
 	}
 	return buf->currentSize;
 }
 
-int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr)
+int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_ID instr)
 {
 	if (!buf)
 	{
@@ -292,7 +366,7 @@ int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr)
 	I2CInstruction_pT ipt = buf->currPt;
 	while (ipt != NULL)
 	{
-		if (instr == ipt)
+		if (instr == ipt->instrID)
 		{
 			return 1;
 		}
@@ -301,7 +375,7 @@ int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr)
 	return 0;
 }
 
-int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr)
+int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_ID instr)
 {
 	if (!buf)
 	{
@@ -316,7 +390,7 @@ int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr)
 	I2CInstruction_pT lastPt = NULL;
 	while (ipt != NULL)
 	{
-		if (instr == ipt)
+		if (instr == ipt->instrID)
 		{
 			if (lastPt == NULL)
 			{

@@ -93,9 +93,18 @@ void I2CSetCurBuf(I2CBuffer_pT buf)
 // This handles I2C using info from the I2C-Instructions
 void I2CHandle()
 {	
-	static I2CInstruction_pT curInst = NULL;			// Holds the current instruction	
 	static int dataPtr = 0;								// Holds how many bytes have been written/read
-	curInst = I2CBufferGetCurrentInstruction(g_curBuf);
+
+	if (!g_curBuf)
+	{
+		// LOG ERROR, current buffer is NULL!
+		return;
+	}
+	if (!I2CBufferGetCurrentSize(g_curBuf))
+	{
+		// LOG ERROR, current buffer is EMPTY!
+		return;
+	}
 
 	// Switch for the value of the I2C status Reg
 	switch(TWSR & 0b11111000)
@@ -103,12 +112,12 @@ void I2CHandle()
 		// Start or repeated start
 		case START_TRA:
 		case REP_START_TRA:
-			loadAdress(I2CInstructionGetAddress(curInst), I2CInstructionGetReadWrite(curInst));	// Load the device address and r/w
+			loadAdress(I2CBufferGetCurrentInstructionAddress(g_curBuf), I2CBufferGetCurrentInstructionReadWrite(g_curBuf));	// Load the device address and r/w
 			break;
 			
 		// Slave address + write has been transmitted and ACK received
 		case SLA_W_TRA_ACK_REC:
-			loadTWDR(*(I2CInstructionGetData(curInst)));			// Load the first byte to write into TWDR
+			loadTWDR(I2CBufferGetCurrentInstructionData(g_curBuf, 0));			// Load the first byte to write into TWDR
 			dataPtr = 1;											// Update  dataPtr
 			break;
 			
@@ -124,7 +133,7 @@ void I2CHandle()
 		// A data byte has been transmitted and an ACK received
 		case DATA_TRA_ACK_REC:
 			// If all of the bytes have been transmitted
-			if(dataPtr == I2CInstructionGetLength(curInst))
+			if(dataPtr == I2CBufferGetCurrentInstructionLength(g_curBuf))
 			{
 				sendStopCond();					// Send a stop condition
 				I2CBufferMoveToNextInstruction(g_curBuf);		// Move to the next instruction (could comment out)
@@ -135,7 +144,7 @@ void I2CHandle()
 			// Otherwise
 			else
 			{	
-				loadTWDR(*(I2CInstructionGetData(curInst) + dataPtr));	// Load the next byte to write into TWDR
+				loadTWDR(I2CBufferGetCurrentInstructionData(g_curBuf,dataPtr));	// Load the next byte to write into TWDR
 				dataPtr++;								// Increment the dataPtr
 			}
 			break;
@@ -143,7 +152,7 @@ void I2CHandle()
 		// A data byte has been transmitted and a NACK received
 		case DATA_TRA_NACK_REC:
 			sendStopCond();					// Send a stop condition
-			if (dataPtr == I2CInstructionGetLength(curInst))
+			if (dataPtr == I2CBufferGetCurrentInstructionLength(g_curBuf))
 			{
 				I2CBufferMoveToNextInstruction(g_curBuf);		// Move to the next instruction (could comment out)
 			}
@@ -158,7 +167,7 @@ void I2CHandle()
 		// Slave address + read transmitted and an ACK received
 		case SLA_R_TRA_ACK_REC:
 			// If only 1 byte is going to be read
-			if(dataPtr == I2CInstructionGetLength(curInst) - 1)
+			if(dataPtr == I2CBufferGetCurrentInstructionLength(g_curBuf) - 1)
 			{
 				disableAck();				// Disable the ACK
 			}
@@ -179,10 +188,10 @@ void I2CHandle()
 			
 		// Data received and ACK transmitted
 		case DATA_REC_ACK_TRA:
-			*((I2CInstructionGetData(curInst)) + dataPtr) = TWDR;		// Read in the byte
+			I2CBufferSetCurrentInstructionData(g_curBuf, dataPtr, TWDR);		// Read in the byte
 			dataPtr++;							// Increment dataPtr
 			// If we've read as much as we want
-			if(dataPtr == I2CInstructionGetLength(curInst) - 1)
+			if(dataPtr == I2CBufferGetCurrentInstructionLength(g_curBuf) - 1)
 			{
 				disableAck();					// Disable the ACK
 			}
@@ -194,7 +203,7 @@ void I2CHandle()
 		
 		// Data received and NACK transmitted
 		case DATA_REC_NACK_TRA:
-			*(I2CInstructionGetData(curInst) + dataPtr) = TWDR;	// Read in the byte
+			I2CBufferSetCurrentInstructionData(g_curBuf, dataPtr, TWDR);	// Read in the byte
 			dataPtr = 0;					// Reset the dataPtr var
 			sendStopCond();					// Send a stop condition
 			I2CBufferMoveToNextInstruction(g_curBuf);		// Move to the next instruction (could comment out)
