@@ -89,7 +89,7 @@ I2C States
 #define SLA_W_REC_ACK_TRA           0x60    Our Slave_add + w received and ACK transmitted
 #define ARB_LOST_SLA_W_REC_ACK_TRA  0x68    Our Slave_add + w received and NACK transmitted
 #define GEN_CALL_ACK_TRA            0x70    Gen call received and ACK transmitted
-#define ARB_LOST_GEN_CALL_ACK_TRA	0x78    Arbitration lost, gen call received, ACK transmitted
+#define ARB_LOST_GEN_CALL_ACK_TRA   0x78    Arbitration lost, gen call received, ACK transmitted
 #define SLA_W_DATA_REC_ACK_TRA      0x80    As slave, data received, ACK transmitted
 #define SLA_W_DATA_REC_NACK_TRA     0x88    As slave, data received, NACK transmitted
 #define GEN_CALL_DATA_REC_ACK_TRA   0x90    As gen call recipient, data received, ACK transmitted
