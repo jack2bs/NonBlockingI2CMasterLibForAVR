@@ -6,43 +6,44 @@ I2CInstruction.h/.c:
 
 Defines/Macros:
 
-#define I2C_WRITE	0
-#define I2C_READ	1
+#define I2C_WRITE   0
+#define I2C_READ    1
 
 Abstract data types (The variables inside are NOT meant to be accessed directly):
 
 struct I2CInstruction
 {
-	int dev_addr;								Contains the address of the device being contacted in this transaction
-	int readWrite;								0 (macro I2C_WRITE) is write and 1 (macro I2C_READ) is read
-	uint8_t* data;								Points to an array of bytes which represent the data to send or the buffer to read into
-	int length;									The number of bytes to send/expect to receive
-	struct I2CInstruction * nextInstr;					A pointer to the next instruction (Instructions act like nodes in a linked list)
+	int dev_addr;                               Contains the address of the device being contacted in this transaction
+	int readWrite;                              0 (macro I2C_WRITE) is write and 1 (macro I2C_READ) is read
+	uint8_t* data;                              Points to an array of bytes which represent the data to send or the buffer to read into
+	int length;                                 The number of bytes to send/expect to receive
+	struct I2CInstruction * nextInstr;          A pointer to the next instruction (Instructions act like nodes in a linked list)
 }
 
 struct I2CBuffer
 {
-	struct I2CInstruction * endPt;					Pointer to the last instruction in the buffer
-	struct I2CInstruction * currPt;					Pointer to the first instruction in the buffer
-	size_t currentSize;							Current size of the buffer
+	struct I2CInstruction * endPt;              Pointer to the last instruction in the buffer
+	struct I2CInstruction * currPt;             Pointer to the first instruction in the buffer
+	size_t currentSize;                         Current size of the buffer
 }
 
 
 Typedefs:
 
-typedef uint32_t I2CInstruction_ID; 					I2CInstruction_ID is the memory safe way to identify I2CInstructions
-typedef struct I2CBuffer * I2CBuffer_pT;					I2CBuffer_pT is a pointer to an I2CBuffer structure
+typedef uint32_t I2CInstruction_ID;             I2CInstruction_ID is the memory safe way to identify I2CInstructions
+typedef struct I2CBuffer * I2CBuffer_pT;        I2CBuffer_pT is a pointer to an I2CBuffer structure
 
 
 Functions:
 
 I2CBuffer API:
-I2CBuffer_pT I2CBufferNew();						I2CBuffer constructor. Returns a pointer to a new I2CBuffer or NULL is the operation failed
-void I2CBufferFree(I2CBuffer_pT buf);							I2CBuffer destructor. Frees all memory associated with an I2CBuffer. In all likelihood, never necessary as Buffers should last until program completion
-I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);		Frees the current instruction, Moves buf.currPt to the next instruction, returns the NEW buf.currPt's ID (0 if the operation failed)
-int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr);			Returns 1 (true) if buf contains instr, or 0 (false) if buf does not contain instr
-int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr);			Removes instr from buf if buf contains instr. Returns 1 if buf contained instr, 0 otherwise
-void I2CBufferSendToBack(I2CBuffer_pT buf);						Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction
+I2CBuffer_pT I2CBufferNew();                                            I2CBuffer constructor. Returns a pointer to a new I2CBuffer or NULL is the operation failed
+void I2CBufferFree(I2CBuffer_pT buf);                                   I2CBuffer destructor. Frees all memory associated with an I2CBuffer. In all likelihood, never necessary as Buffers should last until program completion
+I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);     Frees the current instruction, Moves buf.currPt to the next instruction, returns the NEW buf.currPt's ID (0 if the operation failed)
+int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr);       Returns 1 (true) if buf contains instr, or 0 (false) if buf does not contain instr
+int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr);         Removes instr from buf if buf contains instr. Returns 1 if buf contained instr, 0 otherwise
+void I2CBufferSendToBack(I2CBuffer_pT buf);                             Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction
+
 I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng);	Adds and returns the id of a new instruction at the end of buf, where the new instruction has the following data
 	dev_addr = d_add
 	readWrite = rw
@@ -51,13 +52,13 @@ I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, u
 	nextInstr = NULL
 
 Accessors:
-size_t I2CBufferGetCurrentSize(I2CBuffer_pT buf);					Returns buf.currentSize (See I2CBuffer struct)
-int I2CBufferGetCurrentInstructionAddress(I2CBuffer_pT ibt);			Returns the device address of ibt->currPt
-int I2CBufferGetCurrentInstructionLength(I2CBuffer_pT ibt);				Returns the length of ibt->currPt
-int I2CBufferGetCurrentInstructionReadWrite(I2CBuffer_pT ibt);			Returns whether ibt->currPt is read or write
-I2CInstruction_ID I2CBufferGetCurrentInstructionID(I2CBuffer_pT ibt);		Returns ibt-currPt's ID
-uint8_t I2CBufferGetCurrentInstructionData(I2CBuffer_pT ibt, int offset);	Returns the data in *(ibt->currPt->data + offset)
-int I2CBufferSetCurrentInstructionData(I2CBuffer_pT ibt, int offset, uint8_t data);		Sets the data in *(ibt->currPt->data + offset); Returns True (1) if successful and False (0) if the operation failed
+size_t I2CBufferGetCurrentSize(I2CBuffer_pT buf);                                       Returns buf.currentSize (See I2CBuffer struct)
+int I2CBufferGetCurrentInstructionAddress(I2CBuffer_pT ibt);                            Returns the device address of ibt->currPt
+int I2CBufferGetCurrentInstructionLength(I2CBuffer_pT ibt);                             Returns the length of ibt->currPt
+int I2CBufferGetCurrentInstructionReadWrite(I2CBuffer_pT ibt);                          Returns whether ibt->currPt is read or write
+I2CInstruction_ID I2CBufferGetCurrentInstructionID(I2CBuffer_pT ibt);                   Returns ibt-currPt's ID
+uint8_t I2CBufferGetCurrentInstructionData(I2CBuffer_pT ibt, int offset);               Returns the data in *(ibt->currPt->data + offset)
+int I2CBufferSetCurrentInstructionData(I2CBuffer_pT ibt, int offset, uint8_t data);     Sets the data in *(ibt->currPt->data + offset); Returns True (1) if successful and False (0) if the operation failed
 
 
 I2CDriver.h/.c
@@ -65,73 +66,73 @@ I2CDriver.h/.c
 Defines/Macros:
 
 TWCR Macros
-#define TWI_INT_FLAG			TWINT	I2C interrupt flag
-#define TWI_ACK_EN			TWEA	I2C ACK Enable
-#define TWI_START				TWSTA	I2C Send start bit
-#define TWI_STOP				TWSTO	I2C Send stop bit
-#define TWI_WRI_COL			TWWC	I2C Write collision bit
-#define TWI_ENABLE			TWEN	I2C Enable
-#define TWI_INT_EN			TWIE	I2C interrupt enable
+#define TWI_INT_FLAG        TWINT   I2C interrupt flag
+#define TWI_ACK_EN          TWEA    I2C ACK Enable
+#define TWI_START           TWSTA   I2C Send start bit
+#define TWI_STOP            TWSTO   I2C Send stop bit
+#define TWI_WRI_COL         TWWC    I2C Write collision bit
+#define TWI_ENABLE          TWEN    I2C Enable
+#define TWI_INT_EN          TWIE    I2C interrupt enable
 
 I2C States
-#define START_TRA				0x08	Start transmitted
-#define REP_START_TRA			0x10	Repeated start transmitted
-#define SLA_W_TRA_ACK_REC		0x18	Slave address + write transmitted and an ACK received
-#define SLA_W_TRA_NACK_REC		0x20	Slave address + write transmitted and a NACK received
-#define DATA_TRA_ACK_REC		0x28	A data byte has been transmitted and an ACK received
-#define DATA_TRA_NACK_REC		0x30	A data byte has been transmitted and a NACK received
-#define ARB_LOST				0x38	Arbitration has been lost
-#define SLA_R_TRA_ACK_REC		0x40	Slave address + read transmitted and an ACK received
-#define SLA_R_TRA_NACK_REC		0x48	Slave address + read transmitted and a NACK received
-#define DATA_REC_ACK_TRA		0x50	Data received and ACK transmitted
-#define DATA_REC_NACK_TRA		0x58	Data received and NACK transmitted
-#define SLA_W_REC_ACK_TRA		0x60	Our Slave_add + w received and ACK transmitted
-#define ARB_LOST_SLA_W_REC_ACK_TRA	0x68	Our Slave_add + w received and NACK transmitted
-#define GEN_CALL_ACK_TRA		0x70	Gen call received and ACK transmitted
-#define ARB_LOST_GEN_CALL_ACK_TRA	0x78	Arbitration lost, gen call received, ACK transmitted
-#define SLA_W_DATA_REC_ACK_TRA	0x80	As slave, data received, ACK transmitted
-#define SLA_W_DATA_REC_NACK_TRA	0x88	As slave, data received, NACK transmitted
-#define GEN_CALL_DATA_REC_ACK_TRA	0x90	As gen call recipient, data received, ACK transmitted
-#define GEN_CALL_DATA_REC_NACK_TRA	0x98	As gen call recipient, data received, NACK transmitted
-#define STOP_OR_REP_START_REC		0xA0	As slave, stop or rep start received
-#define SLA_R_REC_ACK_TRA		0xA8	Slave_add + r received and ACK transmitted
-#define ARB_LOST_SLA_R_REC_ACK_TRA	0xB0	Arbitration lost, Sla_add + r received, ACK transmitted
-#define SLA_DATA_TRA_ACK_REC		0xB8	As slave, data transmitted, ACK received
-#define SLA_DATA_TRA_NACK_REC		0xC0	As slave, data transmitted, NACK received
-#define LAST_DATA_TRA_ACK_REC		0xC8	As slave, last data transmitted, ACK received
+#define START_TRA                   0x08    Start transmitted
+#define REP_START_TRA               0x10    Repeated start transmitted
+#define SLA_W_TRA_ACK_REC           0x18    Slave address + write transmitted and an ACK received
+#define SLA_W_TRA_NACK_REC          0x20    Slave address + write transmitted and a NACK received
+#define DATA_TRA_ACK_REC            0x28    A data byte has been transmitted and an ACK received
+#define DATA_TRA_NACK_REC           0x30    A data byte has been transmitted and a NACK received
+#define ARB_LOST                    0x38    Arbitration has been lost
+#define SLA_R_TRA_ACK_REC           0x40    Slave address + read transmitted and an ACK received
+#define SLA_R_TRA_NACK_REC          0x48    Slave address + read transmitted and a NACK received
+#define DATA_REC_ACK_TRA            0x50    Data received and ACK transmitted
+#define DATA_REC_NACK_TRA           0x58    Data received and NACK transmitted
+#define SLA_W_REC_ACK_TRA           0x60    Our Slave_add + w received and ACK transmitted
+#define ARB_LOST_SLA_W_REC_ACK_TRA  0x68    Our Slave_add + w received and NACK transmitted
+#define GEN_CALL_ACK_TRA            0x70    Gen call received and ACK transmitted
+#define ARB_LOST_GEN_CALL_ACK_TRA	0x78    Arbitration lost, gen call received, ACK transmitted
+#define SLA_W_DATA_REC_ACK_TRA      0x80    As slave, data received, ACK transmitted
+#define SLA_W_DATA_REC_NACK_TRA     0x88    As slave, data received, NACK transmitted
+#define GEN_CALL_DATA_REC_ACK_TRA   0x90    As gen call recipient, data received, ACK transmitted
+#define GEN_CALL_DATA_REC_NACK_TRA  0x98    As gen call recipient, data received, NACK transmitted
+#define STOP_OR_REP_START_REC       0xA0    As slave, stop or rep start received
+#define SLA_R_REC_ACK_TRA           0xA8    Slave_add + r received and ACK transmitted
+#define ARB_LOST_SLA_R_REC_ACK_TRA  0xB0    Arbitration lost, Sla_add + r received, ACK transmitted
+#define SLA_DATA_TRA_ACK_REC        0xB8    As slave, data transmitted, ACK received
+#define SLA_DATA_TRA_NACK_REC       0xC0    As slave, data transmitted, NACK received
+#define LAST_DATA_TRA_ACK_REC       0xC8    As slave, last data transmitted, ACK received
 
 
 Functions:
 
 API:
 
-void I2CTask()							Must be called frequently (every loop in a simple embedded program) to determine when to start I2C transaction
+void I2CTask()                                      Must be called frequently (every loop in a simple embedded program) to determine when to start I2C transaction
 
-void I2CSetCurBuf(struct I2CInstruction * buf)		Must be called to set the buffer for the I2C driver to take instructions from
-									struct I2CInstruction * buf is a pointer to the the buffer you want to use
+void I2CSetCurBuf(struct I2CInstruction * buf)      Must be called to set the buffer for the I2C driver to take instructions from
+                                                    struct I2CInstruction * buf is a pointer to the the buffer you want to use
 
-void I2CInit(long sclFreq)					Called to initialize the I2C to a certain frequency
-									long sclFreq is the intended frequency for the I2C peripheral to run at
+void I2CInit(long sclFreq)                          Called to initialize the I2C to a certain frequency
+                                                    long sclFreq is the intended frequency for the I2C peripheral to run at
 
 *NOTE ABOUT I2CINIT:
-	Calculation stems from the following equation:
-		I2C_CLK = F_CPU / (16 + 2 * TWBR * (4^TWPS))
-	With the assumption that TWPS is 1
+    Calculation stems from the following equation:
+        I2C_CLK = F_CPU / (16 + 2 * TWBR * (4^TWPS))
+    With the assumption that TWPS is 1
 	
-	For lower I2C_CLKs, it may be necessary to set TWPS to a number other than 1, and so this function should be
-	changed or ignored.
+    For lower I2C_CLKs, it may be necessary to set TWPS to a number other than 1, and so this function should be
+    changed or ignored.
 
 
 Helper (private/don't use) functions:
-inline void sendStartCond()					Sends a start condition to the I2C bus
-inline void sendStopCond()					Sends a stop condition to the I2C bus
-inline void enableACK()						Enables ACK
-inline void disableAck()					Disables ACK
-inline void loadTWDR(uint8_t data)				Load data into TWDR
-inline void loadAdress(uint8_t address, uint8_t r_w)	Loads the slave address + r/w onto the I2C bus
-inline void loadAddressRead(uint8_t address)		Loads the slave address + r onto the I2C bus
-inline void loadAddressWrite(uint8_t address)		Loads the slave address + w onto the I2C bus
-void I2CHandle()							This handles I2C using info from the I2C-Instructions
+inline void sendStartCond()                             Sends a start condition to the I2C bus
+inline void sendStopCond()                              Sends a stop condition to the I2C bus
+inline void enableACK()                                 Enables ACK
+inline void disableAck()                                Disables ACK
+inline void loadTWDR(uint8_t data)                      Load data into TWDR
+inline void loadAdress(uint8_t address, uint8_t r_w)    Loads the slave address + r/w onto the I2C bus
+inline void loadAddressRead(uint8_t address)            Loads the slave address + r onto the I2C bus
+inline void loadAddressWrite(uint8_t address)           Loads the slave address + w onto the I2C bus
+void I2CHandle()                                        This handles I2C using info from the I2C-Instructions
 
 
 
