@@ -10,6 +10,7 @@
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 // Custom includes
 #include "I2CInstruction.h"
@@ -151,6 +152,24 @@ I2CInstruction_ID I2CInstructionGetID(I2CInstruction_pT ipt)
 	}
 	
 	return ipt->instrID;
+}
+
+int I2CInstructionPrint(I2CInstruction_pT ipt, FILE * ostream)
+{
+	if (fprintf(ostream, "I_id: %d: %s with Addr: %d; Data: ", ipt->instrID, ((ipt->readWrite)?"Read":"Write"), ipt->dev_addr) < 0)
+	{
+		return -1;	
+	}
+
+	for (size_t ind = 0; ind < ipt->length; ind++)
+	{
+		if (fprintf(ostream, "%X ", ipt->data[ind]) < 0)
+		{
+			return -1;
+		}
+	}
+	fputc('\n', ostream);
+	return 0;
 }
 
 I2CBuffer_pT I2CBufferNew()
@@ -419,6 +438,24 @@ void I2CBufferSendToBack(I2CBuffer_pT buf)
 	
 	I2CBufferPushInstruction(buf, buf->currPt);
 	I2CBufferMoveToNextInstruction(buf);
+}
+
+int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
+{
+	if (!ibt->currPt)
+	{
+		fprintf(ostream, "Buffer is empty");
+		return 0;
+	}
+	
+
+	I2CInstruction_pT ipt = ibt->currPt;
+	while (ipt)
+	{
+		I2CInstructionPrint(ipt, ostream);
+		ipt = ipt->nextInstr;
+	}
+	
 }
 
 /* End I2C instruction array API */

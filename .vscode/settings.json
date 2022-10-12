@@ -1,0 +1,12 @@
+{
+	"AVR.reporter.arguments": [
+		"-C"
+	],
+	"AVR.source.compiler": "C://Winavr/bin/avr-gcc.exe",
+	"AVR.programmer.tool": "C:/Winavr/bin/avrdude.exe",
+	"AVR.programmer.definitions": "C:/Winavr/bin/avrdude.conf",
+	"AVR.source.libraries": [
+		"C:\\WinAVR\\avr\\include",
+		"C:\\WinAVR\\avr\\include\\avr"
+	]
+}

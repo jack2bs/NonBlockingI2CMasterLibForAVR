@@ -68,5 +68,7 @@ int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_ID instr);
 /* Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction */
 void I2CBufferSendToBack(I2CBuffer_pT buf);
 
+/* Prints out a human readable version of the buffer. Returns 0 if successful, -1 otherwise */
+int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
 
 #endif /* I2CINSTRUCTION_H_ */
