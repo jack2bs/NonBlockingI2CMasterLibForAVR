@@ -13,18 +13,18 @@ Abstract data types (The variables inside are NOT meant to be accessed directly)
 
 struct I2CInstruction
 {
-	int dev_addr;                               Contains the address of the device being contacted in this transaction
-	int readWrite;                              0 (macro I2C_WRITE) is write and 1 (macro I2C_READ) is read
-	uint8_t* data;                              Points to an array of bytes which represent the data to send or the buffer to read into
-	int length;                                 The number of bytes to send/expect to receive
-	struct I2CInstruction * nextInstr;          A pointer to the next instruction (Instructions act like nodes in a linked list)
+    int dev_addr;                               Contains the address of the device being contacted in this transaction
+    int readWrite;                              0 (macro I2C_WRITE) is write and 1 (macro I2C_READ) is read
+    uint8_t* data;                              Points to an array of bytes which represent the data to send or the buffer to read into
+    int length;                                 The number of bytes to send/expect to receive
+    struct I2CInstruction * nextInstr;          A pointer to the next instruction (Instructions act like nodes in a linked list)
 }
 
 struct I2CBuffer
 {
-	struct I2CInstruction * endPt;              Pointer to the last instruction in the buffer
-	struct I2CInstruction * currPt;             Pointer to the first instruction in the buffer
-	size_t currentSize;                         Current size of the buffer
+    struct I2CInstruction * endPt;              Pointer to the last instruction in the buffer
+    struct I2CInstruction * currPt;             Pointer to the first instruction in the buffer
+    size_t currentSize;                         Current size of the buffer
 }
 
 
@@ -43,13 +43,14 @@ I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf);     Frees th
 int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_pT instr);       Returns 1 (true) if buf contains instr, or 0 (false) if buf does not contain instr
 int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_pT instr);         Removes instr from buf if buf contains instr. Returns 1 if buf contained instr, 0 otherwise
 void I2CBufferSendToBack(I2CBuffer_pT buf);                             Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction
+int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream);                   Prints out a human readable form of the I2C Buffer to ostream; Returns -1 if fails, 0 if succeeds
 
 I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng);	Adds and returns the id of a new instruction at the end of buf, where the new instruction has the following data
-	dev_addr = d_add
-	readWrite = rw
-	data = dat
-	length = leng
-	nextInstr = NULL
+    dev_addr = d_add
+    readWrite = rw
+    data = dat
+    length = leng
+    nextInstr = NULL
 
 Accessors:
 size_t I2CBufferGetCurrentSize(I2CBuffer_pT buf);                                       Returns buf.currentSize (See I2CBuffer struct)
@@ -118,7 +119,7 @@ void I2CInit(long sclFreq)                          Called to initialize the I2C
     Calculation stems from the following equation:
         I2C_CLK = F_CPU / (16 + 2 * TWBR * (4^TWPS))
     With the assumption that TWPS is 1
-	
+    
     For lower I2C_CLKs, it may be necessary to set TWPS to a number other than 1, and so this function should be
     changed or ignored.
 
@@ -133,12 +134,4 @@ inline void loadAdress(uint8_t address, uint8_t r_w)    Loads the slave address 
 inline void loadAddressRead(uint8_t address)            Loads the slave address + r onto the I2C bus
 inline void loadAddressWrite(uint8_t address)           Loads the slave address + w onto the I2C bus
 void I2CHandle()                                        This handles I2C using info from the I2C-Instructions
-
-
-
-
-
-
-
-
 

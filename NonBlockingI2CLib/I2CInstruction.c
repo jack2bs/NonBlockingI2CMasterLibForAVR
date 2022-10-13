@@ -10,7 +10,6 @@
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 // Custom includes
 #include "I2CInstruction.h"
@@ -28,13 +27,13 @@ typedef struct I2CInstruction
 	
 }* I2CInstruction_pT;
 
-typedef struct I2CBuffer
+struct I2CBuffer
 {
 	I2CInstruction_pT endPt;
 	I2CInstruction_pT currPt;
 	size_t currentSize;
 	
-}* I2CBuffer_pT;
+};
 
 I2CInstruction_pT I2CInstructionNew(int d_add, int rw, uint8_t* dat, int leng)
 {
@@ -156,14 +155,16 @@ I2CInstruction_ID I2CInstructionGetID(I2CInstruction_pT ipt)
 
 int I2CInstructionPrint(I2CInstruction_pT ipt, FILE * ostream)
 {
-	if (fprintf(ostream, "I_id: %d: %s with Addr: %d; Data: ", ipt->instrID, ((ipt->readWrite)?"Read":"Write"), ipt->dev_addr) < 0)
+	size_t ind;
+
+	if (fprintf(ostream, "I_id: %lu: %s with Addr: %x; Data: ", (uint32_t)ipt->instrID, ((ipt->readWrite)?"Read":"Write"), ipt->dev_addr) < 0)
 	{
 		return -1;	
 	}
 
-	for (size_t ind = 0; ind < ipt->length; ind++)
+	for (ind = 0; ind < ipt->length; ind++)
 	{
-		if (fprintf(ostream, "%X ", ipt->data[ind]) < 0)
+		if (fprintf(ostream, "%x ", ipt->data[ind]) < 0)
 		{
 			return -1;
 		}
@@ -318,7 +319,12 @@ I2CInstruction_ID I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT n
 	{
 		return 0;
 	}
-	
+
+	if (buf->currentSize >= I2C_MAX_BUFFER_SIZE)
+	{
+		return 0;
+	}
+
 	cli();
 	buf->currentSize++;
 	
@@ -352,7 +358,7 @@ I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, u
 	{
 		return 0;
 	}
-	
+
 	I2CInstruction_pT newInstr = I2CInstructionNew(d_add, rw, dat, leng);
 	if (newInstr == NULL)
 	{
@@ -442,6 +448,7 @@ void I2CBufferSendToBack(I2CBuffer_pT buf)
 
 int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
 {
+	// Disable interrupts !
 	if (!ibt->currPt)
 	{
 		fprintf(ostream, "Buffer is empty");
@@ -450,12 +457,19 @@ int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
 	
 
 	I2CInstruction_pT ipt = ibt->currPt;
+
+	fprintf(ostream, "Buffer Contains:\n");
+
 	while (ipt)
 	{
-		I2CInstructionPrint(ipt, ostream);
+		if (I2CInstructionPrint(ipt, ostream) < 0)
+		{
+			return -1;
+		}
 		ipt = ipt->nextInstr;
 	}
-	
+	fputc('\n', ostream);
+	return 0;
 }
 
 /* End I2C instruction array API */

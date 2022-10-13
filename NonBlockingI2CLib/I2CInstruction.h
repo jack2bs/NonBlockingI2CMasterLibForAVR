@@ -10,6 +10,9 @@
 #define I2CINSTRUCTION_H_
 
 #include <string.h>
+#include <stdio.h>
+
+#define I2C_MAX_BUFFER_SIZE     64
 
 #define I2C_WRITE	0
 #define I2C_READ	1
@@ -68,7 +71,8 @@ int I2CBufferRemove(I2CBuffer_pT buf, I2CInstruction_ID instr);
 /* Moves the current value of buf.currPt to buf.endPt and sets buf.currPt to the next instruction */
 void I2CBufferSendToBack(I2CBuffer_pT buf);
 
-/* Prints out a human readable version of the buffer. Returns 0 if successful, -1 otherwise */
+/* Prints out a human readable form of the I2C Buffer to ostream
+ * Returns -1 if fails, 0 if succeeds */
 int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream);
 
 #endif /* I2CINSTRUCTION_H_ */
