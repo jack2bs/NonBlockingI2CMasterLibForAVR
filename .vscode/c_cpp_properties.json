@@ -18,7 +18,9 @@
                 "-fpermissive",
                 "-fno-exceptions",
                 "-fno-threadsafe-statics",
-                "-pipe"
+                "-pipe",
+                "-mmcu=atmega32u4",
+                "-DF_CPU=16000000UL"
             ]
         }
     ],

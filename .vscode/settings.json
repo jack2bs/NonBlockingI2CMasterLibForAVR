@@ -8,5 +8,7 @@
 	"AVR.source.libraries": [
 		"C:\\WinAVR\\avr\\include",
 		"C:\\WinAVR\\avr\\include\\avr"
-	]
+	],
+	"AVR.device.type": "atmega32u4",
+	"AVR.device.frequency": 16000000
 }

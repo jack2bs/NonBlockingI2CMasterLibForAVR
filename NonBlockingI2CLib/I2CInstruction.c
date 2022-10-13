@@ -13,6 +13,7 @@
 
 // Custom includes
 #include "I2CInstruction.h"
+#include "I2CDriver.h"
 
 static I2CInstruction_ID g_s_instrIDAssigner = 1;
 
@@ -448,7 +449,9 @@ void I2CBufferSendToBack(I2CBuffer_pT buf)
 
 int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
 {
-	// Disable interrupts !
+	uint8_t TWCRCpy = TWCR;
+	TWCR &= ~(1<<TWI_INT_EN);
+
 	if (!ibt->currPt)
 	{
 		fprintf(ostream, "Buffer is empty");
@@ -469,6 +472,9 @@ int I2CBufferPrint(I2CBuffer_pT ibt, FILE * ostream)
 		ipt = ipt->nextInstr;
 	}
 	fputc('\n', ostream);
+
+	TWCR = TWCRCpy;
+
 	return 0;
 }
 
