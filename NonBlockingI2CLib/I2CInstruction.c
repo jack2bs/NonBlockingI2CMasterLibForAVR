@@ -14,6 +14,7 @@
 // Custom includes
 #include "I2CInstruction.h"
 #include "I2CDriver.h"
+#include "UsartAsFile.h"
 
 static I2CInstruction_ID g_s_instrIDAssigner = 1;
 
@@ -47,7 +48,7 @@ I2CInstruction_pT I2CInstructionNew(int d_add, int rw, uint8_t* dat, int leng)
 	// If it is a write, make a defensive copy (instruction owns the data)
 	if (rw == I2C_WRITE)
 	{
-		newInstr->data = malloc(sizeof(uint8_t) * leng);
+		newInstr->data = malloc(leng);
 		if (!newInstr->data)
 		{
 			free(newInstr);
@@ -77,6 +78,7 @@ I2CInstruction_pT I2CInstructionNew(int d_add, int rw, uint8_t* dat, int leng)
 
 void I2CInstructionFree(I2CInstruction_pT ipt)
 {
+	cli();
 	if (!ipt)
 	{
 		return;
@@ -90,8 +92,9 @@ void I2CInstructionFree(I2CInstruction_pT ipt)
 			free(ipt->data);
 		}
 	}
-	free(ipt);
 	
+	free(ipt);
+	sei();
 }
 
 int I2CInstructionGetAddress(I2CInstruction_pT ipt)
@@ -239,8 +242,13 @@ I2CInstruction_ID I2CBufferMoveToNextInstruction(I2CBuffer_pT buf)
 	
 	sei();
 	
-	// Returns the next instruction (or nullptr if none)
-	return buf->currPt->instrID;
+	// Returns the next instruction (or 0 if none)
+	if(buf->currPt)
+	{
+		return buf->currPt->instrID;
+	}
+	return 0;
+	
 }
 
 int I2CBufferGetCurrentInstructionAddress(I2CBuffer_pT ibt)
@@ -312,21 +320,28 @@ I2CInstruction_ID I2CBufferGetCurrentInstructionID(I2CBuffer_pT ibt)
 
 I2CInstruction_ID I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT newInstr)
 {
-	if (!buf)
-	{
-		return 0;
-	}
 	if (!newInstr)
 	{
 		return 0;
 	}
 
-	if (buf->currentSize >= I2C_MAX_BUFFER_SIZE)
+	
+
+	if (!buf)
 	{
+		I2CInstructionFree(newInstr);
 		return 0;
 	}
+	
+	if (buf->currentSize >= I2C_MAX_BUFFER_SIZE)
+	{
+		I2CInstructionFree(newInstr);
 
+		return 0;
+	}
+	
 	cli();
+
 	buf->currentSize++;
 	
 	if (buf->endPt)
@@ -355,12 +370,14 @@ I2CInstruction_ID I2CBufferPushInstruction(I2CBuffer_pT buf, I2CInstruction_pT n
 // Adds an instruction at w_ptr
 I2CInstruction_ID I2CBufferAddInstruction(I2CBuffer_pT buf, int d_add, int rw, uint8_t* dat, int leng)
 {
+	
 	if (!buf)
 	{
 		return 0;
 	}
-
+	
 	I2CInstruction_pT newInstr = I2CInstructionNew(d_add, rw, dat, leng);
+	
 	if (newInstr == NULL)
 	{
 		return 0;
@@ -388,16 +405,18 @@ int I2CBufferContains(I2CBuffer_pT buf, I2CInstruction_ID instr)
 	{
 		return 0;
 	}
-	
+	cli();
 	I2CInstruction_pT ipt = buf->currPt;
 	while (ipt != NULL)
 	{
 		if (instr == ipt->instrID)
 		{
+			sei();
 			return 1;
 		}
 		ipt = ipt->nextInstr;
 	}
+	sei();
 	return 0;
 }
 

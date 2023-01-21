@@ -12,6 +12,7 @@
 // Custom includes
 #include "I2CDriver.h"
 #include "I2CInstruction.h"
+#include "Defines.h"
 
 //Forward declaration
 void I2CHandle(void);
@@ -225,7 +226,7 @@ void I2CHandle()
 // Called every loop to determine when to start I2C transaction
 void I2CTask()
 {
-    
+    cli();
     // If g_state is low and there is an instruction available
     if(!g_state)
     {
@@ -236,12 +237,9 @@ void I2CTask()
             sendStartCond();
             g_state = 1;
         }
-    }	
+    }
+    sei();	
 }
-
-#ifndef F_CPU
-#define F_CPU 16000000UL
-#endif //F_CPU
 
 /* Called to initialize the I2C to a certain frequency
  * Param: long sclFreq is the intended frequency for the I2C peripheral to run at */
